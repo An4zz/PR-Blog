@@ -1,0 +1,108 @@
+import { useCallback, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import type { CategoryId, Entry, SortKey } from '../lib/types'
+
+const DEFAULT_SORT: SortKey = 'rating_desc'
+
+/**
+ * Filter + sort state backed by the URL search params, so it is shared between
+ * the Map and List views and is shareable/bookmarkable.
+ * Example: ?cat=beach,hike&minRating=4&sort=rating_desc
+ */
+export function useFilters() {
+  const [params, setParams] = useSearchParams()
+
+  const categories = useMemo<CategoryId[]>(() => {
+    const raw = params.get('cat')
+    return raw ? (raw.split(',').filter(Boolean) as CategoryId[]) : []
+  }, [params])
+
+  const minRating = Number(params.get('minRating') ?? '0')
+  const sort = (params.get('sort') as SortKey) ?? DEFAULT_SORT
+
+  const update = useCallback(
+    (next: Partial<{ categories: CategoryId[]; minRating: number; sort: SortKey }>) => {
+      setParams(
+        (prev) => {
+          const p = new URLSearchParams(prev)
+          if (next.categories !== undefined) {
+            if (next.categories.length) p.set('cat', next.categories.join(','))
+            else p.delete('cat')
+          }
+          if (next.minRating !== undefined) {
+            if (next.minRating > 0) p.set('minRating', String(next.minRating))
+            else p.delete('minRating')
+          }
+          if (next.sort !== undefined) {
+            if (next.sort !== DEFAULT_SORT) p.set('sort', next.sort)
+            else p.delete('sort')
+          }
+          return p
+        },
+        { replace: true }
+      )
+    },
+    [setParams]
+  )
+
+  const toggleCategory = useCallback(
+    (id: CategoryId) => {
+      const set = new Set(categories)
+      if (set.has(id)) set.delete(id)
+      else set.add(id)
+      update({ categories: [...set] })
+    },
+    [categories, update]
+  )
+
+  const clear = useCallback(() => {
+    update({ categories: [], minRating: 0, sort: DEFAULT_SORT })
+  }, [update])
+
+  const active = categories.length > 0 || minRating > 0
+
+  return {
+    categories,
+    minRating,
+    sort,
+    active,
+    setCategories: (c: CategoryId[]) => update({ categories: c }),
+    setMinRating: (r: number) => update({ minRating: r }),
+    setSort: (s: SortKey) => update({ sort: s }),
+    toggleCategory,
+    clear,
+  }
+}
+
+/** Apply the current filters + sort to a list of entries. */
+export function applyFilters(
+  entries: Entry[],
+  filters: { categories: CategoryId[]; minRating: number; sort: SortKey }
+): Entry[] {
+  const { categories, minRating, sort } = filters
+  const filtered = entries.filter((e) => {
+    if (categories.length && !categories.includes(e.category)) return false
+    if (e.rating < minRating) return false
+    return true
+  })
+
+  const sorted = [...filtered]
+  switch (sort) {
+    case 'rating_desc':
+      sorted.sort((a, b) => b.rating - a.rating)
+      break
+    case 'rating_asc':
+      sorted.sort((a, b) => a.rating - b.rating)
+      break
+    case 'newest':
+      sorted.sort((a, b) => b.created_at.localeCompare(a.created_at))
+      break
+    case 'oldest':
+      sorted.sort((a, b) => a.created_at.localeCompare(b.created_at))
+      break
+    case 'name':
+      sorted.sort((a, b) => a.name.localeCompare(b.name))
+      break
+  }
+  return sorted
+}
