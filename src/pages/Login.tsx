@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { ADMIN_EMAIL } from '../lib/config'
 
 export default function Login() {
   const { signIn, configured } = useAuth()
@@ -8,7 +9,6 @@ export default function Login() {
   const location = useLocation()
   const from = (location.state as { from?: string } | null)?.from ?? '/'
 
-  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -18,10 +18,12 @@ export default function Login() {
     setError(null)
     setBusy(true)
     try {
-      await signIn(email, password)
+      // Single shared admin account: the email is fixed, only the password
+      // is entered.
+      await signIn(ADMIN_EMAIL, password)
       navigate(from, { replace: true })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed.')
+    } catch {
+      setError('Incorrect password.')
       setBusy(false)
     }
   }
@@ -32,10 +34,10 @@ export default function Login() {
         onSubmit={handleSubmit}
         className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
       >
-        <h1 className="text-xl font-bold text-slate-900">Family login</h1>
+        <h1 className="text-xl font-bold text-slate-900">Admin login</h1>
         <p className="text-sm text-slate-500">
-          Logging in lets you add and edit places. Everyone else can browse
-          without an account.
+          Enter the password to add and edit places. Everyone else can browse
+          without logging in.
         </p>
 
         {!configured && (
@@ -46,17 +48,6 @@ export default function Login() {
         )}
 
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Email</span>
-          <input
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="rounded-md border border-slate-300 px-3 py-2"
-            required
-          />
-        </label>
-        <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-slate-700">Password</span>
           <input
             type="password"
@@ -64,6 +55,7 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="rounded-md border border-slate-300 px-3 py-2"
+            autoFocus
             required
           />
         </label>

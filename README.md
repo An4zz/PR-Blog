@@ -48,10 +48,17 @@ Go to **Storage → New bucket**, name it `photos`, and mark it **Public**. Then
 re-run `supabase/setup.sql` (or just its storage section) so the bucket's
 access policies are applied.
 
-### 4. Add your family members
-**Authentication → Users → Add user** — create an email + password for each
-family member. Under **Authentication → Providers → Email**, turn **off**
-"Enable sign-ups" so only you can add accounts.
+### 4. Create the shared admin login
+This project uses a single shared admin account to add/edit places (everyone
+else just browses). In **Authentication → Users → Add user**, create one user:
+
+- **Email:** `admin@pr-blog.app` (must match `ADMIN_EMAIL` in `src/lib/config.ts`,
+  or set a `VITE_ADMIN_EMAIL` secret to use a different one)
+- **Password:** your chosen admin password
+- Tick **Auto Confirm User** so it's usable immediately.
+
+Then under **Authentication → Providers → Email**, turn **off** "Enable
+sign-ups". The login page only asks for the password.
 
 ### 5. Wire up environment variables
 - **Locally:** put the values in `.env.local`:
