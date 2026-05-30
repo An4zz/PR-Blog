@@ -80,11 +80,12 @@ Push to the `main` branch (or run the **Deploy to GitHub Pages** workflow
 manually). The site goes live at:
 
 ```
-https://an4zz.github.io/pr-blog/
+https://an4zz.github.io/PR-Blog/
 ```
 
-> The Vite `base` is set to `/pr-blog/` in `vite.config.ts` to match the repo
-> name. If you rename the repo, update that value too.
+> The Vite `base` is set to `'./'` (relative) in `vite.config.ts`, so assets
+> resolve no matter the repo-name casing in the URL. This works because the app
+> uses a HashRouter (the document is always served from the base directory).
 
 ## How it works
 
