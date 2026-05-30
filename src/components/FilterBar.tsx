@@ -16,15 +16,30 @@ export default function FilterBar({ showSort = true }: { showSort?: boolean }) {
     categories,
     minRating,
     sort,
+    q,
     active,
     toggleCategory,
     setMinRating,
     setSort,
+    setQuery,
     clear,
   } = useFilters()
 
   return (
     <div className="flex flex-col gap-3 border-b border-slate-200 bg-white px-4 py-3">
+      <div className="relative">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+          🔍
+        </span>
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search places by name…"
+          className="w-full rounded-md border border-slate-300 py-2 pl-9 pr-3 text-sm"
+        />
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         {CATEGORIES.map((cat) => {
           const on = categories.includes(cat.id)

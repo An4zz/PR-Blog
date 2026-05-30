@@ -19,9 +19,17 @@ export function useFilters() {
 
   const minRating = Number(params.get('minRating') ?? '0')
   const sort = (params.get('sort') as SortKey) ?? DEFAULT_SORT
+  const q = params.get('q') ?? ''
 
   const update = useCallback(
-    (next: Partial<{ categories: CategoryId[]; minRating: number; sort: SortKey }>) => {
+    (
+      next: Partial<{
+        categories: CategoryId[]
+        minRating: number
+        sort: SortKey
+        q: string
+      }>
+    ) => {
       setParams(
         (prev) => {
           const p = new URLSearchParams(prev)
@@ -36,6 +44,10 @@ export function useFilters() {
           if (next.sort !== undefined) {
             if (next.sort !== DEFAULT_SORT) p.set('sort', next.sort)
             else p.delete('sort')
+          }
+          if (next.q !== undefined) {
+            if (next.q.trim()) p.set('q', next.q)
+            else p.delete('q')
           }
           return p
         },
@@ -56,19 +68,21 @@ export function useFilters() {
   )
 
   const clear = useCallback(() => {
-    update({ categories: [], minRating: 0, sort: DEFAULT_SORT })
+    update({ categories: [], minRating: 0, sort: DEFAULT_SORT, q: '' })
   }, [update])
 
-  const active = categories.length > 0 || minRating > 0
+  const active = categories.length > 0 || minRating > 0 || q.trim().length > 0
 
   return {
     categories,
     minRating,
     sort,
+    q,
     active,
     setCategories: (c: CategoryId[]) => update({ categories: c }),
     setMinRating: (r: number) => update({ minRating: r }),
     setSort: (s: SortKey) => update({ sort: s }),
+    setQuery: (text: string) => update({ q: text }),
     toggleCategory,
     clear,
   }
@@ -77,12 +91,19 @@ export function useFilters() {
 /** Apply the current filters + sort to a list of entries. */
 export function applyFilters(
   entries: Entry[],
-  filters: { categories: CategoryId[]; minRating: number; sort: SortKey }
+  filters: { categories: CategoryId[]; minRating: number; sort: SortKey; q: string }
 ): Entry[] {
-  const { categories, minRating, sort } = filters
+  const { categories, minRating, sort, q } = filters
+  const needle = q.trim().toLowerCase()
   const filtered = entries.filter((e) => {
     if (categories.length && !categories.includes(e.category)) return false
     if (e.rating < minRating) return false
+    if (
+      needle &&
+      !e.name.toLowerCase().includes(needle) &&
+      !(e.description ?? '').toLowerCase().includes(needle)
+    )
+      return false
     return true
   })
 

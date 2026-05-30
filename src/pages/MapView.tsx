@@ -1,20 +1,38 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
+import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet'
+import L from 'leaflet'
 import FilterBar from '../components/FilterBar'
 import RatingStars from '../components/RatingStars'
 import CategoryBadge from '../components/CategoryBadge'
 import { useEntries } from '../hooks/useEntries'
 import { applyFilters, useFilters } from '../hooks/useFilters'
 import { categoryIcon, PR_CENTER, PR_ZOOM } from '../lib/leaflet'
+import type { Entry } from '../lib/types'
+
+/** Pans/zooms the map to fit the currently-visible pins when filters narrow
+ *  the results, so searching on the map jumps to what you searched for. */
+function FitToResults({ entries, active }: { entries: Entry[]; active: boolean }) {
+  const map = useMap()
+  // A stable key of the visible set so we only refit when it actually changes.
+  const key = entries.map((e) => e.id).join(',')
+  useEffect(() => {
+    if (!active || entries.length === 0) return
+    const bounds = L.latLngBounds(
+      entries.map((e) => [e.latitude, e.longitude] as [number, number])
+    )
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 })
+  }, [key, active, map, entries])
+  return null
+}
 
 export default function MapView() {
   const { entries, loading } = useEntries()
-  const { categories, minRating, sort } = useFilters()
+  const { categories, minRating, sort, q, active } = useFilters()
 
   const visible = useMemo(
-    () => applyFilters(entries, { categories, minRating, sort }),
-    [entries, categories, minRating, sort]
+    () => applyFilters(entries, { categories, minRating, sort, q }),
+    [entries, categories, minRating, sort, q]
   )
 
   return (
@@ -32,6 +50,7 @@ export default function MapView() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          <FitToResults entries={visible} active={active} />
           {visible.map((entry) => (
             <Marker
               key={entry.id}

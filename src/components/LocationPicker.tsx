@@ -37,8 +37,34 @@ export default function LocationPicker({ value, onChange }: Props) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<NominatimResult[]>([])
   const [searching, setSearching] = useState(false)
+  const [locating, setLocating] = useState(false)
+  const [geoError, setGeoError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
+
+  function useCurrentLocation() {
+    setGeoError(null)
+    if (!('geolocation' in navigator)) {
+      setGeoError('Your browser does not support location.')
+      return
+    }
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        onChange({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setLocating(false)
+      },
+      (err) => {
+        setGeoError(
+          err.code === err.PERMISSION_DENIED
+            ? 'Location permission denied — allow it or pick on the map.'
+            : 'Could not get your location — pick on the map instead.'
+        )
+        setLocating(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
 
   // Debounced Nominatim search, restricted to Puerto Rico. Respects the OSM
   // usage policy (one request per pause in typing, never per keystroke).
@@ -110,6 +136,16 @@ export default function LocationPicker({ value, onChange }: Props) {
           </ul>
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={useCurrentLocation}
+        disabled={locating}
+        className="inline-flex w-fit items-center gap-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+      >
+        📍 {locating ? 'Locating…' : 'Use my current location'}
+      </button>
+      {geoError && <p className="text-xs text-red-600">{geoError}</p>}
 
       <div className="h-64 overflow-hidden rounded-md border border-slate-300">
         <MapContainer center={PR_CENTER} zoom={PR_ZOOM} scrollWheelZoom>
