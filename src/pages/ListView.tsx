@@ -9,11 +9,11 @@ import { applyFilters, useFilters } from '../hooks/useFilters'
 export default function ListView() {
   const { entries, loading, error } = useEntries()
   const { session } = useAuth()
-  const { categories, minRating, sort } = useFilters()
+  const { categories, minRating, sort, q } = useFilters()
 
   const visible = useMemo(
-    () => applyFilters(entries, { categories, minRating, sort }),
-    [entries, categories, minRating, sort]
+    () => applyFilters(entries, { categories, minRating, sort, q }),
+    [entries, categories, minRating, sort, q]
   )
 
   return (
