@@ -14,6 +14,8 @@ interface AuthState {
   loading: boolean
   configured: boolean
   signIn: (email: string, password: string) => Promise<void>
+  /** Returns true if a session was created immediately (email confirmation off). */
+  signUp: (email: string, password: string, name: string) => Promise<boolean>
   signOut: () => Promise<void>
 }
 
@@ -49,6 +51,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error
   }
 
+  async function signUp(email: string, password: string, name: string) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } },
+    })
+    if (error) throw error
+    // A session is returned only when email confirmation is disabled; otherwise
+    // the user must confirm via email before they can sign in.
+    return Boolean(data.session)
+  }
+
   async function signOut() {
     await supabase.auth.signOut()
   }
@@ -61,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         configured: isSupabaseConfigured,
         signIn,
+        signUp,
         signOut,
       }}
     >

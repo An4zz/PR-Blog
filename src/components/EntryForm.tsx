@@ -21,7 +21,10 @@ export default function EntryForm({ existing }: { existing?: Entry }) {
   const [rating, setRating] = useState(existing?.rating ?? 5)
   const [description, setDescription] = useState(existing?.description ?? '')
   const [authorName, setAuthorName] = useState(
-    existing?.author_name ?? user?.email?.split('@')[0] ?? ''
+    existing?.author_name ??
+      (user?.user_metadata?.name as string | undefined) ??
+      user?.email?.split('@')[0] ??
+      ''
   )
   const [websiteUrl, setWebsiteUrl] = useState(existing?.website_url ?? '')
   const [gmapsUrl, setGmapsUrl] = useState(existing?.gmaps_url ?? '')

@@ -48,17 +48,19 @@ Go to **Storage → New bucket**, name it `photos`, and mark it **Public**. Then
 re-run `supabase/setup.sql` (or just its storage section) so the bucket's
 access policies are applied.
 
-### 4. Create the shared admin login
-This project uses a single shared admin account to add/edit places (everyone
-else just browses). In **Authentication → Users → Add user**, create one user:
+### 4. Enable accounts (open sign-up)
+Anyone can browse without an account; logging in is only needed to add or edit
+places. In **Authentication → Providers → Email**:
 
-- **Email:** `admin@pr-blog.app` (must match `ADMIN_EMAIL` in `src/lib/config.ts`,
-  or set a `VITE_ADMIN_EMAIL` secret to use a different one)
-- **Password:** your chosen admin password
-- Tick **Auto Confirm User** so it's usable immediately.
+- Turn **on** "Enable sign-ups" so people can create their own accounts.
+- For frictionless onboarding, turn **off** "Confirm email" — new accounts work
+  instantly. (Leave it **on** if you want to verify email addresses; the app
+  then shows a "check your email" message after sign-up. Note Supabase's
+  built-in email is rate-limited, so configure custom SMTP for real volume.)
 
-Then under **Authentication → Providers → Email**, turn **off** "Enable
-sign-ups". The login page only asks for the password.
+> Heads up: with open sign-up, the current RLS policies let any logged-in user
+> edit/delete any entry. To restrict edits to each author later, add a
+> `user_id` column and tighten the update/delete policies.
 
 ### 5. Wire up environment variables
 - **Locally:** put the values in `.env.local`:
