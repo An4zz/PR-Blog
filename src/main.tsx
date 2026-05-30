@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import './lib/leaflet' // side-effect: fixes default marker icons
 import './index.css'
 import App from './App.tsx'
+import ErrorBoundary from './components/ErrorBoundary'
 import { AuthProvider } from './context/AuthContext'
 import { EntriesProvider } from './hooks/useEntries'
 
@@ -12,12 +13,14 @@ import { EntriesProvider } from './hooks/useEntries'
 // any 404 redirect trick (URLs look like /pr-blog/#/list).
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <HashRouter>
-      <AuthProvider>
-        <EntriesProvider>
-          <App />
-        </EntriesProvider>
-      </AuthProvider>
-    </HashRouter>
+    <ErrorBoundary>
+      <HashRouter>
+        <AuthProvider>
+          <EntriesProvider>
+            <App />
+          </EntriesProvider>
+        </AuthProvider>
+      </HashRouter>
+    </ErrorBoundary>
   </StrictMode>
 )
