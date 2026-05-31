@@ -7,7 +7,7 @@ import './index.css'
 import App from './App.tsx'
 import ErrorBoundary from './components/ErrorBoundary'
 import { AuthProvider } from './context/AuthContext'
-import { EntriesProvider } from './hooks/useEntries'
+import { LocationsProvider } from './hooks/useLocations'
 
 // HashRouter is used so deep links and refreshes work on GitHub Pages without
 // any 404 redirect trick (URLs look like /pr-blog/#/list).
@@ -16,9 +16,9 @@ createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>
       <HashRouter>
         <AuthProvider>
-          <EntriesProvider>
+          <LocationsProvider>
             <App />
-          </EntriesProvider>
+          </LocationsProvider>
         </AuthProvider>
       </HashRouter>
     </ErrorBoundary>

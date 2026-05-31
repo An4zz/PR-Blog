@@ -1,19 +1,19 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import FilterBar from '../components/FilterBar'
-import EntryCard from '../components/EntryCard'
-import { useEntries } from '../hooks/useEntries'
+import LocationCard from '../components/LocationCard'
+import { useLocations } from '../hooks/useLocations'
 import { useAuth } from '../context/AuthContext'
 import { applyFilters, useFilters } from '../hooks/useFilters'
 
 export default function ListView() {
-  const { entries, loading, error } = useEntries()
+  const { locations, loading, error } = useLocations()
   const { session } = useAuth()
   const { categories, minRating, sort, q } = useFilters()
 
   const visible = useMemo(
-    () => applyFilters(entries, { categories, minRating, sort, q }),
-    [entries, categories, minRating, sort, q]
+    () => applyFilters(locations, { categories, minRating, sort, q }),
+    [locations, categories, minRating, sort, q]
   )
 
   return (
@@ -37,8 +37,8 @@ export default function ListView() {
           </div>
         )}
         <div className="flex flex-col gap-3">
-          {visible.map((entry) => (
-            <EntryCard key={entry.id} entry={entry} />
+          {visible.map((loc) => (
+            <LocationCard key={loc.id} location={loc} />
           ))}
         </div>
       </div>

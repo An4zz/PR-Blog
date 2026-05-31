@@ -1,44 +1,76 @@
--- Puerto Rico Family Travel Guide — Supabase setup.
+-- Vía Conmigo — Supabase setup (Locations + Posts + Comments model).
 -- Run this once in the Supabase SQL Editor (Dashboard → SQL Editor → New query).
--- Safe to re-run: it uses IF NOT EXISTS / DROP POLICY guards.
+-- Safe to re-run: uses IF NOT EXISTS / DROP POLICY guards.
+--
+-- Model:
+--   locations  — a physical place (name, pin, category). Has its own comment thread.
+--   posts      — one person's visit/review of a location (stars, photos, notes).
+--                A location's overall rating is the average of its posts' stars.
+--   comments   — attached to EITHER a location or a post (a discussion thread).
 
--- 1. Entries table -----------------------------------------------------------
-create table if not exists public.entries (
+-- 1. Locations ---------------------------------------------------------------
+create table if not exists public.locations (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
   category    text not null,            -- beach|restaurant|bar|hike|landmark|hotel|shop|activity|other
-  rating      smallint not null check (rating between 1 and 5),
-  description text,
   latitude    double precision not null,
   longitude   double precision not null,
-  photo_url   text,
   gmaps_url   text,
   website_url text,
+  user_id     uuid references auth.users on delete set null,
   author_name text not null,
   created_at  timestamptz not null default now()
 );
+create index if not exists locations_category_idx on public.locations (category);
 
-create index if not exists entries_category_idx on public.entries (category);
-create index if not exists entries_rating_idx   on public.entries (rating);
+-- 2. Posts (a visit/review of a location) ------------------------------------
+create table if not exists public.posts (
+  id          uuid primary key default gen_random_uuid(),
+  location_id uuid not null references public.locations on delete cascade,
+  rating      smallint not null check (rating between 1 and 5),
+  notes       text,
+  photo_urls  text[] not null default '{}',
+  user_id     uuid references auth.users on delete set null,
+  author_name text not null,
+  created_at  timestamptz not null default now()
+);
+create index if not exists posts_location_idx on public.posts (location_id);
 
--- 2. Row Level Security: public read, family-only write ----------------------
-alter table public.entries enable row level security;
+-- 3. Comments (thread on a location OR a post) -------------------------------
+create table if not exists public.comments (
+  id          uuid primary key default gen_random_uuid(),
+  location_id uuid references public.locations on delete cascade,
+  post_id     uuid references public.posts on delete cascade,
+  body        text not null,
+  user_id     uuid references auth.users on delete set null,
+  author_name text not null,
+  created_at  timestamptz not null default now(),
+  -- A comment targets exactly one of: a location or a post.
+  constraint comment_target_chk check (
+    (location_id is not null)::int + (post_id is not null)::int = 1
+  )
+);
+create index if not exists comments_location_idx on public.comments (location_id);
+create index if not exists comments_post_idx     on public.comments (post_id);
 
-drop policy if exists "public read"  on public.entries;
-drop policy if exists "auth insert"   on public.entries;
-drop policy if exists "auth update"   on public.entries;
-drop policy if exists "auth delete"   on public.entries;
+-- 4. Row Level Security: public read, logged-in write ------------------------
+do $$
+declare t text;
+begin
+  foreach t in array array['locations', 'posts', 'comments'] loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('drop policy if exists "public read" on public.%I', t);
+    execute format('drop policy if exists "auth insert" on public.%I', t);
+    execute format('drop policy if exists "auth update" on public.%I', t);
+    execute format('drop policy if exists "auth delete" on public.%I', t);
+    execute format('create policy "public read" on public.%I for select using (true)', t);
+    execute format('create policy "auth insert" on public.%I for insert to authenticated with check (true)', t);
+    execute format('create policy "auth update" on public.%I for update to authenticated using (true) with check (true)', t);
+    execute format('create policy "auth delete" on public.%I for delete to authenticated using (true)', t);
+  end loop;
+end $$;
 
-create policy "public read" on public.entries
-  for select using (true);
-create policy "auth insert" on public.entries
-  for insert to authenticated with check (true);
-create policy "auth update" on public.entries
-  for update to authenticated using (true) with check (true);
-create policy "auth delete" on public.entries
-  for delete to authenticated using (true);
-
--- 3. Storage policies for the `photos` bucket --------------------------------
+-- 5. Storage policies for the `photos` bucket --------------------------------
 -- First create a PUBLIC bucket named `photos` in Dashboard → Storage, then run:
 drop policy if exists "public read photos" on storage.objects;
 drop policy if exists "auth upload photos" on storage.objects;
@@ -53,3 +85,6 @@ create policy "auth modify photos" on storage.objects
   for update to authenticated using (bucket_id = 'photos');
 create policy "auth delete photos" on storage.objects
   for delete to authenticated using (bucket_id = 'photos');
+
+-- 6. (Optional) remove the old flat table from the previous version ----------
+-- drop table if exists public.entries;

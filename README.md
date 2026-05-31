@@ -4,11 +4,17 @@ A family-run travel guide to the best (and worst) places to visit — beaches,
 restaurants, hikes, bars, landmarks and more — with ratings, photos, local
 tips, and a filterable map. (Currently centered on Puerto Rico.)
 
-- **Map view** with colored pins you can filter by type.
-- **List view** sortable by rating, date, or name.
-- **Easy add form** with photo upload, click-on-map location picker, and
-  optional Google Maps / website links.
-- **Public to browse**, **family-only to add/edit** (Supabase login).
+- **Locations & reviews**: each place is a **location** that anyone can review.
+  Multiple people add their own **posts** (star rating, several photos, notes);
+  the location shows the **average rating**.
+- **Discussion threads** on both locations and individual posts.
+- **Duplicate detection**: adding a place near/like an existing one suggests
+  joining it instead of creating a duplicate.
+- **Map view** with colored pins filterable by type; **list view** sortable by
+  rating, date, or name; **text search** across both.
+- **Add form** with current-location / address-search / click-on-map pin,
+  multiple photo uploads, and optional Google Maps / website links.
+- **Public to browse**; anyone with an account can add/review/comment.
 - **100% free** to run: Supabase free tier + GitHub Pages.
 
 The site runs out of the box with sample data. To make it live and editable by
@@ -89,24 +95,28 @@ https://an4zz.github.io/PR-Blog/
 
 ## How it works
 
-- **Filtering** lives in the URL (`?cat=beach,hike&minRating=4`), so it's
-  shared between the Map and List views and is shareable/bookmarkable.
-- **Photos** upload to the public `photos` Supabase Storage bucket; the public
-  URL is stored on the entry row.
+- **Data model**: `locations` → many `posts` (reviews) → `comments`; comments
+  can also attach directly to a location. A location's rating is the average of
+  its posts' stars (computed client-side).
+- **Filtering/search** lives in the URL (`?cat=beach,hike&minRating=4&q=…`), so
+  it's shared between the Map and List views and is shareable/bookmarkable.
+- **Photos** upload to the public `photos` Supabase Storage bucket; each post
+  stores an array of public photo URLs.
 - **Security**: the anon key in the bundle is public by design — all writes are
   gated by Row Level Security, which only permits authenticated (logged-in)
-  family members.
+  users.
 
 ## Project structure
 
 ```
 src/
-  components/   FilterBar, EntryCard, EntryForm, LocationPicker, PhotoUpload, …
-  pages/        MapView, ListView, AddEntry, EntryDetail, Login
-  hooks/        useEntries (shared data), useFilters (URL-backed filters)
+  components/   FilterBar, LocationCard, LocationForm, PostForm, PostCard,
+                CommentThread, LocationPicker, PhotosUpload, RatingStars, …
+  pages/        MapView, ListView, AddLocation, LocationDetail, Login
+  hooks/        useLocations (shared data), useFilters (URL-backed filters)
   context/      AuthContext
-  data/         entries (Supabase access), categories, sample data
-  lib/          supabase client, types, leaflet setup
-supabase/setup.sql            # database + storage policies
+  data/         locations / posts / comments (Supabase access), categories, sample data
+  lib/          supabase client, types, geo (duplicate detection), leaflet setup
+supabase/setup.sql            # locations + posts + comments tables, RLS, storage
 .github/workflows/deploy.yml  # GitHub Pages deploy
 ```

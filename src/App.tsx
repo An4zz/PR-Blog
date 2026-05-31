@@ -3,8 +3,8 @@ import Header from './components/Header'
 import ProtectedRoute from './components/ProtectedRoute'
 import MapView from './pages/MapView'
 import ListView from './pages/ListView'
-import AddEntry from './pages/AddEntry'
-import EntryDetail from './pages/EntryDetail'
+import AddLocation from './pages/AddLocation'
+import LocationDetail from './pages/LocationDetail'
 import Login from './pages/Login'
 
 export default function App() {
@@ -16,20 +16,20 @@ export default function App() {
           <Route path="/" element={<MapView />} />
           <Route path="/list" element={<ListView />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/entry/:id" element={<EntryDetail />} />
+          <Route path="/location/:id" element={<LocationDetail />} />
           <Route
             path="/add"
             element={
               <ProtectedRoute>
-                <AddEntry />
+                <AddLocation />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/entry/:id/edit"
+            path="/location/:id/edit"
             element={
               <ProtectedRoute>
-                <AddEntry />
+                <AddLocation />
               </ProtectedRoute>
             }
           />

@@ -1,21 +1,48 @@
-/** A single place documented by the family. Mirrors the `entries` table in Supabase. */
-export interface Entry {
+/** A physical place. Mirrors the `locations` table. */
+export interface Location {
   id: string
   name: string
   category: CategoryId
-  rating: number // 1-5
-  description: string | null
   latitude: number
   longitude: number
-  photo_url: string | null
   gmaps_url: string | null
   website_url: string | null
   author_name: string
   created_at: string
 }
 
-/** Fields the user fills in when creating an entry (before the row exists). */
-export type NewEntry = Omit<Entry, 'id' | 'created_at'>
+/** One person's visit/review of a location. Mirrors the `posts` table. */
+export interface Post {
+  id: string
+  location_id: string
+  rating: number // 1-5
+  notes: string | null
+  photo_urls: string[]
+  author_name: string
+  created_at: string
+}
+
+/** A comment on either a location or a post. Mirrors the `comments` table. */
+export interface Comment {
+  id: string
+  location_id: string | null
+  post_id: string | null
+  body: string
+  author_name: string
+  created_at: string
+}
+
+/** A location with its posts and derived stats, used by the map/list/detail. */
+export interface LocationWithStats extends Location {
+  posts: Post[]
+  avgRating: number // 0 when there are no posts yet
+  postCount: number
+  photos: string[] // all photos across posts (first is used as the thumbnail)
+}
+
+export type NewLocation = Omit<Location, 'id' | 'created_at'>
+export type NewPost = Omit<Post, 'id' | 'created_at'>
+export type NewComment = Omit<Comment, 'id' | 'created_at'>
 
 export type CategoryId =
   | 'beach'
