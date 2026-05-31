@@ -10,44 +10,26 @@
     />
     <title>Vía Conmigo</title>
     <script>
-      // On-screen error reporter: surfaces uncaught JS errors and failed
-      // script/stylesheet loads directly in the page (useful for debugging on
-      // mobile where the dev console isn't accessible). Registered in capture
-      // mode so it also catches resource (404) load failures.
-      (function () {
-        function show(html) {
-          var r = document.getElementById('root');
-          if (r)
-            r.innerHTML =
-              '<div style="padding:16px;font:13px/1.4 monospace;color:#b91c1c;white-space:pre-wrap">' +
-              html +
-              '</div>';
-        }
-        window.addEventListener(
-          'error',
-          function (e) {
-            if (e && e.target && (e.target.src || e.target.href)) {
-              show('Failed to load resource:\n' + (e.target.src || e.target.href));
-            } else if (e && e.message) {
-              show(
-                'JavaScript error:\n' +
-                  e.message +
-                  '\n' +
-                  (e.filename || '') +
-                  ':' +
-                  (e.lineno || '')
-              );
-            }
-          },
-          true
-        );
-        window.addEventListener('unhandledrejection', function (e) {
-          show(
-            'Unhandled promise rejection:\n' +
-              (e.reason && e.reason.message ? e.reason.message : e.reason)
-          );
-        });
-      })();
+      // Failsafe: if the app's own JS/CSS bundle fails to load, show a message
+      // instead of a blank page. Scoped to <script>/<link> only — transient
+      // failures of images or map tiles are NOT fatal and are ignored (Leaflet
+      // and React handle those). React render crashes are caught by ErrorBoundary.
+      window.addEventListener(
+        'error',
+        function (e) {
+          var tag = e && e.target && e.target.tagName;
+          if (tag === 'SCRIPT' || tag === 'LINK') {
+            var r = document.getElementById('root');
+            if (r)
+              r.innerHTML =
+                '<div style="padding:16px;font:13px/1.4 monospace;color:#b91c1c;white-space:pre-wrap">' +
+                'Failed to load the app:\n' +
+                (e.target.src || e.target.href) +
+                '</div>';
+          }
+        },
+        true
+      );
     </script>
   </head>
   <body>
