@@ -20,7 +20,7 @@ export default function Header() {
           🌴
         </span>
         <span className="text-lg font-bold text-slate-900">
-          Puerto Rico Family Guide
+          Vía Conmigo
         </span>
       </Link>
 
