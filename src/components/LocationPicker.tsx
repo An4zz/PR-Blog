@@ -8,10 +8,23 @@ interface Props {
   onChange: (coords: { lat: number; lng: number }) => void
 }
 
-interface NominatimResult {
+interface SearchResult {
   display_name: string
-  lat: string
-  lon: string
+  lat: number
+  lon: number
+}
+
+/** Build a readable label from a Photon GeoJSON feature's properties. */
+function labelFor(props: Record<string, unknown>): string {
+  const parts = [
+    props.name,
+    props.street,
+    props.city ?? props.county,
+    props.state,
+    props.country,
+  ].filter(Boolean) as string[]
+  // De-duplicate consecutive repeats (e.g. name === city).
+  return parts.filter((p, i) => p !== parts[i - 1]).join(', ')
 }
 
 /** Drops/moves the marker when the user clicks the map. */
@@ -35,8 +48,9 @@ function Recenter({ coords }: { coords: { lat: number; lng: number } | null }) {
 
 export default function LocationPicker({ value, onChange }: Props) {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<NominatimResult[]>([])
+  const [results, setResults] = useState<SearchResult[]>([])
   const [searching, setSearching] = useState(false)
+  const [searched, setSearched] = useState(false)
   const [locating, setLocating] = useState(false)
   const [geoError, setGeoError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -66,44 +80,57 @@ export default function LocationPicker({ value, onChange }: Props) {
     )
   }
 
-  // Debounced Nominatim search, restricted to Puerto Rico. Respects the OSM
-  // usage policy (one request per pause in typing, never per keystroke).
+  // Debounced geocoding via Photon (komoot) — a free, no-key, CORS-friendly
+  // geocoder built for browser autocomplete. Results are biased toward Puerto
+  // Rico but not restricted, so any place can be found.
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     const q = query.trim()
-    // All state updates happen inside the (async) timeout callback, never
-    // synchronously in the effect body.
     debounceRef.current = setTimeout(
       async () => {
         if (q.length < 3) {
           setResults([])
+          setSearched(false)
           return
         }
         setSearching(true)
         try {
           const url =
-            'https://nominatim.openstreetmap.org/search?format=json&countrycodes=pr&limit=5&q=' +
+            'https://photon.komoot.io/api/?limit=5&lang=en' +
+            `&lat=${PR_CENTER[0]}&lon=${PR_CENTER[1]}` +
+            '&q=' +
             encodeURIComponent(q)
-          const res = await fetch(url, {
-            headers: { Accept: 'application/json' },
-          })
-          setResults(res.ok ? await res.json() : [])
+          const res = await fetch(url)
+          const data = res.ok ? await res.json() : { features: [] }
+          const features = (data.features ?? []) as Array<{
+            geometry: { coordinates: [number, number] }
+            properties: Record<string, unknown>
+          }>
+          setResults(
+            features.map((f) => ({
+              display_name: labelFor(f.properties),
+              lon: f.geometry.coordinates[0],
+              lat: f.geometry.coordinates[1],
+            }))
+          )
         } catch {
           setResults([])
         } finally {
           setSearching(false)
+          setSearched(true)
         }
       },
-      q.length < 3 ? 0 : 1000
+      q.length < 3 ? 0 : 500
     )
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
   }, [query])
 
-  function pickResult(r: NominatimResult) {
-    onChange({ lat: Number(r.lat), lng: Number(r.lon) })
+  function pickResult(r: SearchResult) {
+    onChange({ lat: r.lat, lng: r.lon })
     setResults([])
+    setSearched(false)
     setQuery(r.display_name.split(',')[0])
   }
 
@@ -117,10 +144,15 @@ export default function LocationPicker({ value, onChange }: Props) {
           placeholder="Search an address or place in Puerto Rico…"
           className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
         />
-        {(results.length > 0 || searching) && (
+        {(results.length > 0 || searching || searched) && (
           <ul className="absolute z-[1000] mt-1 max-h-48 w-full overflow-auto rounded-md border border-slate-200 bg-white shadow-lg">
             {searching && (
               <li className="px-3 py-2 text-sm text-slate-400">Searching…</li>
+            )}
+            {!searching && searched && results.length === 0 && (
+              <li className="px-3 py-2 text-sm text-slate-400">
+                No matches — try a different name, or tap the map to drop a pin.
+              </li>
             )}
             {results.map((r, i) => (
               <li key={i}>
