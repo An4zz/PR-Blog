@@ -1,8 +1,8 @@
-# 🌴 Puerto Rico Family Travel Guide
+# 🌴 Vía Conmigo
 
-A family-run guide to the best (and worst) places to visit in Puerto Rico —
-beaches, restaurants, hikes, bars, landmarks and more — with ratings, photos,
-local tips, and a filterable map.
+A family-run travel guide to the best (and worst) places to visit — beaches,
+restaurants, hikes, bars, landmarks and more — with ratings, photos, local
+tips, and a filterable map. (Currently centered on Puerto Rico.)
 
 - **Map view** with colored pins you can filter by type.
 - **List view** sortable by rating, date, or name.
