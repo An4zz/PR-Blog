@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import type { CategoryId, Entry, SortKey } from '../lib/types'
+import type { CategoryId, LocationWithStats, SortKey } from '../lib/types'
 
 const DEFAULT_SORT: SortKey = 'rating_desc'
 
@@ -88,20 +88,21 @@ export function useFilters() {
   }
 }
 
-/** Apply the current filters + sort to a list of entries. */
+/** Apply the current filters + sort to a list of locations. Searches the
+ *  location name and the text of its posts; rating filtering uses the average. */
 export function applyFilters(
-  entries: Entry[],
+  locations: LocationWithStats[],
   filters: { categories: CategoryId[]; minRating: number; sort: SortKey; q: string }
-): Entry[] {
+): LocationWithStats[] {
   const { categories, minRating, sort, q } = filters
   const needle = q.trim().toLowerCase()
-  const filtered = entries.filter((e) => {
-    if (categories.length && !categories.includes(e.category)) return false
-    if (e.rating < minRating) return false
+  const filtered = locations.filter((l) => {
+    if (categories.length && !categories.includes(l.category)) return false
+    if (l.avgRating < minRating) return false
     if (
       needle &&
-      !e.name.toLowerCase().includes(needle) &&
-      !(e.description ?? '').toLowerCase().includes(needle)
+      !l.name.toLowerCase().includes(needle) &&
+      !l.posts.some((p) => (p.notes ?? '').toLowerCase().includes(needle))
     )
       return false
     return true
@@ -110,10 +111,10 @@ export function applyFilters(
   const sorted = [...filtered]
   switch (sort) {
     case 'rating_desc':
-      sorted.sort((a, b) => b.rating - a.rating)
+      sorted.sort((a, b) => b.avgRating - a.avgRating)
       break
     case 'rating_asc':
-      sorted.sort((a, b) => a.rating - b.rating)
+      sorted.sort((a, b) => a.avgRating - b.avgRating)
       break
     case 'newest':
       sorted.sort((a, b) => b.created_at.localeCompare(a.created_at))
