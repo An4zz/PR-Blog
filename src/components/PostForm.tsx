@@ -3,6 +3,7 @@ import RatingStars from './RatingStars'
 import PhotosUpload from './PhotosUpload'
 import { insertPost, updatePost, uploadPhotos } from '../data/posts'
 import { useAuth } from '../context/AuthContext'
+import { friendlyError } from '../lib/errors'
 import type { NewPost, Post } from '../lib/types'
 
 interface Props {
@@ -46,7 +47,7 @@ export default function PostForm({ locationId, existing, onSaved, onCancel }: Pr
       else await insertPost(payload)
       onSaved()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+      setError(friendlyError(err))
       setBusy(false)
     }
   }
