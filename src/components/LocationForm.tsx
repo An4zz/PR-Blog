@@ -10,6 +10,7 @@ import { insertPost, uploadPhotos } from '../data/posts'
 import { useLocations } from '../hooks/useLocations'
 import { useAuth } from '../context/AuthContext'
 import { distanceMeters } from '../lib/geo'
+import { friendlyError } from '../lib/errors'
 import type { CategoryId, Location, NewLocation } from '../lib/types'
 
 /** Distance under which a new place is treated as a possible duplicate. */
@@ -88,9 +89,10 @@ export default function LocationForm({ existing }: { existing?: Location }) {
         return
       }
 
-      const location = await insertLocation(payload)
-      // Create the author's first review along with the place.
+      // Upload photos FIRST so a storage error can't leave an orphan location
+      // with no review.
       const photo_urls = files.length ? await uploadPhotos(files) : []
+      const location = await insertLocation(payload)
       await insertPost({
         location_id: location.id,
         rating,
@@ -101,7 +103,7 @@ export default function LocationForm({ existing }: { existing?: Location }) {
       await reload()
       navigate(`/location/${location.id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+      setError(friendlyError(err))
       setBusy(false)
     }
   }
