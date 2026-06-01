@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import RatingStars from './RatingStars'
 import CommentThread from './CommentThread'
+import Lightbox from './Lightbox'
 import { deletePost } from '../data/posts'
 import { useAuth } from '../context/AuthContext'
 import type { Post } from '../lib/types'
@@ -14,6 +15,7 @@ interface Props {
 export default function PostCard({ post, onEdit, onChanged }: Props) {
   const { session } = useAuth()
   const [showThread, setShowThread] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
   async function handleDelete() {
     if (!confirm('Delete this review?')) return
@@ -39,17 +41,32 @@ export default function PostCard({ post, onEdit, onChanged }: Props) {
 
       {post.photo_urls.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
-          {post.photo_urls.map((url) => (
-            <a key={url} href={url} target="_blank" rel="noopener noreferrer">
+          {post.photo_urls.map((url, i) => (
+            <button
+              key={url}
+              type="button"
+              onClick={() => setLightboxIndex(i)}
+              className="cursor-zoom-in"
+              aria-label="Expand photo"
+            >
               <img
                 src={url}
                 alt=""
                 loading="lazy"
-                className="h-24 w-24 rounded-md object-cover"
+                className="h-24 w-24 rounded-md object-cover transition-opacity hover:opacity-90"
               />
-            </a>
+            </button>
           ))}
         </div>
+      )}
+
+      {lightboxIndex !== null && (
+        <Lightbox
+          photos={post.photo_urls}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onIndex={setLightboxIndex}
+        />
       )}
 
       <div className="mt-3 flex items-center gap-4 text-sm">
