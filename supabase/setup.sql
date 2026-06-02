@@ -70,6 +70,34 @@ begin
   end loop;
 end $$;
 
+-- 4b. Feedback (bug reports + suggestions) -----------------------------------
+-- Anyone (even anonymous visitors) can submit; only logged-in users can read
+-- and manage submissions.
+create table if not exists public.feedback (
+  id          uuid primary key default gen_random_uuid(),
+  type        text not null check (type in ('bug', 'suggestion')),
+  message     text not null,
+  page        text,
+  author_name text,
+  status      text not null default 'open' check (status in ('open', 'resolved')),
+  created_at  timestamptz not null default now()
+);
+
+alter table public.feedback enable row level security;
+drop policy if exists "anyone insert feedback" on public.feedback;
+drop policy if exists "auth read feedback"    on public.feedback;
+drop policy if exists "auth update feedback"  on public.feedback;
+drop policy if exists "auth delete feedback"  on public.feedback;
+
+create policy "anyone insert feedback" on public.feedback
+  for insert with check (true);
+create policy "auth read feedback" on public.feedback
+  for select to authenticated using (true);
+create policy "auth update feedback" on public.feedback
+  for update to authenticated using (true) with check (true);
+create policy "auth delete feedback" on public.feedback
+  for delete to authenticated using (true);
+
 -- 5. Storage policies for the `photos` bucket --------------------------------
 -- First create a PUBLIC bucket named `photos` in Dashboard → Storage, then run:
 drop policy if exists "public read photos" on storage.objects;

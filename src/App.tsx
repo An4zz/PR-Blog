@@ -1,11 +1,13 @@
 import { Route, Routes } from 'react-router-dom'
 import Header from './components/Header'
 import ProtectedRoute from './components/ProtectedRoute'
+import FeedbackButton from './components/FeedbackButton'
 import MapView from './pages/MapView'
 import ListView from './pages/ListView'
 import AddLocation from './pages/AddLocation'
 import LocationDetail from './pages/LocationDetail'
 import Login from './pages/Login'
+import FeedbackPage from './pages/Feedback'
 
 export default function App() {
   return (
@@ -34,6 +36,14 @@ export default function App() {
             }
           />
           <Route
+            path="/feedback"
+            element={
+              <ProtectedRoute>
+                <FeedbackPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="*"
             element={
               <div className="p-8 text-center text-slate-500">
@@ -43,6 +53,7 @@ export default function App() {
           />
         </Routes>
       </main>
+      <FeedbackButton />
     </div>
   )
 }

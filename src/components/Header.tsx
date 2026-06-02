@@ -36,6 +36,11 @@ export default function Header() {
             ➕ Add
           </NavLink>
         )}
+        {session && (
+          <NavLink to="/feedback" className={navClass}>
+            💬 Feedback
+          </NavLink>
+        )}
 
         {session ? (
           <button

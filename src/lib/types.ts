@@ -56,3 +56,22 @@ export type CategoryId =
   | 'other'
 
 export type SortKey = 'rating_desc' | 'rating_asc' | 'newest' | 'oldest' | 'name'
+
+export type FeedbackType = 'bug' | 'suggestion'
+export type FeedbackStatus = 'open' | 'resolved'
+
+/** A bug report or improvement suggestion submitted from the site. */
+export interface Feedback {
+  id: string
+  type: FeedbackType
+  message: string
+  page: string | null
+  author_name: string | null
+  status: FeedbackStatus
+  created_at: string
+}
+
+export type NewFeedback = Pick<
+  Feedback,
+  'type' | 'message' | 'page' | 'author_name'
+>
