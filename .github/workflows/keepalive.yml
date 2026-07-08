@@ -1,0 +1,32 @@
+name: Keep Supabase awake
+
+# Free-tier Supabase projects auto-pause after ~7 days of inactivity, which
+# makes the site fail to load data. A lightweight request every few days counts
+# as activity and keeps the project running. Uses the same secrets as the deploy.
+
+on:
+  schedule:
+    - cron: '0 12 */3 * *' # every 3 days at 12:00 UTC
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          code=$(curl -sS -o /dev/null -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/locations?select=id&limit=1" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY")
+          echo "Supabase responded with HTTP $code"
+          # 2xx means the project is awake; anything else is surfaced but the
+          # scheduled run still counts as activity.
+          if [ "$code" -ge 200 ] && [ "$code" -lt 300 ]; then
+            echo "Project is awake."
+          else
+            echo "::warning::Unexpected status $code — project may be paused; restore it in the Supabase dashboard."
+          fi
