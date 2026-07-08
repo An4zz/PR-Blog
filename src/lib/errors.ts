@@ -1,17 +1,20 @@
+/** Best-effort message string from any thrown value (Error, Supabase object, …). */
+function extractMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
+  if (err && typeof err === 'object') {
+    const o = err as Record<string, unknown>
+    return (
+      [o.message, o.details, o.hint].filter(Boolean).join(' — ') ||
+      JSON.stringify(o)
+    )
+  }
+  return String(err)
+}
+
 /** Turn a raw error (including Supabase's non-Error objects) into a friendly,
  *  actionable message for the UI. */
 export function friendlyError(err: unknown): string {
-  let msg = ''
-  if (err instanceof Error) {
-    msg = err.message
-  } else if (err && typeof err === 'object') {
-    const o = err as Record<string, unknown>
-    msg =
-      [o.message, o.details, o.hint].filter(Boolean).join(' — ') ||
-      JSON.stringify(o)
-  } else {
-    msg = String(err)
-  }
+  const msg = extractMessage(err)
 
   if (/bucket not found/i.test(msg)) {
     return 'Photo storage isn’t set up: create a public bucket named “photos” in Supabase → Storage (or remove the photos and try again).'
