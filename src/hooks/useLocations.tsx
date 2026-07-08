@@ -8,6 +8,7 @@ import {
 } from 'react'
 import type { LocationWithStats } from '../lib/types'
 import { fetchLocations } from '../data/locations'
+import { friendlyError } from '../lib/errors'
 
 interface LocationsState {
   locations: LocationWithStats[]
@@ -33,7 +34,7 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
     try {
       setLocations(await fetchLocations())
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load places')
+      setError(friendlyError(e))
     } finally {
       setLoading(false)
     }
@@ -47,7 +48,7 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
       })
       .catch((e) => {
         if (active)
-          setError(e instanceof Error ? e.message : 'Failed to load places')
+          setError(friendlyError(e))
       })
       .finally(() => {
         if (active) setLoading(false)
